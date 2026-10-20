@@ -2,8 +2,9 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {Script} from 'node:vm';
-import {safeItem,collect,STATUSES,IN_PROGRESS} from '../scripts/sync-public.mjs';
+import {safeItem,collect as realCollect,collectClaims,STATUSES,IN_PROGRESS} from '../scripts/sync-public.mjs';
 const item={id:1,number:'KT-001',title:'钱袋问题',summary:'待核查',kind:'问题',status:'排查中',reply:'',createdAt:'2026-10-20T10:00:00Z',updatedAt:'2026-10-20T10:00:00Z',reportCount:1};
+const collect=fn=>realCollect(async(url,...args)=>url.includes('/api/claim-receipts')?page([]):fn(url,...args));
 const page=(items,nextCursor=null,total=items.length)=>new Response(JSON.stringify({items,nextCursor,stats:{total},updatedAt:'2026-10-20T10:00:00Z'}));
 test('exported records have a strict field allowlist',()=>{assert.deepEqual(safeItem({...item,email:'PRIVATE',logs:'PRIVATE',attachment:'PRIVATE',submission_id:'PRIVATE'}),item);});
 test('all supported workflow states survive sync with correct progress counts',async()=>{const items=STATUSES.map((status,n)=>({...item,id:n+1,number:'KT-'+String(n+1).padStart(3,'0'),status}));for(const row of items)assert.equal(safeItem(row).status,row.status);const result=await collect(async()=>page(items));assert.equal(result.stats.progress,IN_PROGRESS.length);assert.equal(result.stats.done,2);});
@@ -11,3 +12,5 @@ test('malformed public fields cannot be published',()=>{for(const bad of [{id:-1
 test('all pages are collected with no private additions',async()=>{let count=0;const v=await collect(async()=>++count===1?page([{...item,id:2,number:'KT-002'}],2,2):page([item],null,2));assert.equal(v.items.length,2);assert.equal(v.stats.progress,2);assert.equal(v.nextCursor,null);});
 test('failed source, duplicates, incomplete or changing lists stop publication',async()=>{await assert.rejects(collect(async()=>new Response('',{status:503})));await assert.rejects(collect(async()=>page([item,item])));await assert.rejects(collect(async()=>page([item],null,4)));let n=0;await assert.rejects(collect(async()=>++n===1?page([item],1,2):page([],null,3)));});
 test('public page is self-contained, uses same-origin data and textContent',()=>{const html=readFileSync('web/index.html','utf8');const scripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];assert.equal(scripts.length,1);new Script(scripts[0][1]);assert.ok(html.includes("api('./issues.json'+"));assert.ok(html.includes('textContent'));assert.ok(!html.includes('innerHTML'));for(const secret of ['ADMIN_EMAIL','TALLY_SIGNING_SECRET','/api/admin','/api/issues','提交反馈','反馈入口'])assert.ok(!html.includes(secret));assert.ok(!/https?:\/\/(?:www\.)?tally\.so\//i.test(html));assert.ok(!/<(?:script|link)[^>]+(?:src|href)=["']https?:/i.test(html));});
+
+test('claim sync exports verifier plus approved public issue IDs only',async()=>{const verifier='a'.repeat(64);const value=await collectClaims(async()=>new Response(JSON.stringify({items:[{verifier,issues:[1],email:'PRIVATE',submission:'PRIVATE'}],nextCursor:null})),new Set([1]));assert.deepEqual(value,[{verifier,issues:[1]}]);await assert.rejects(collectClaims(async()=>new Response(JSON.stringify({items:[{verifier,issues:[9]}],nextCursor:null})),new Set([1])));});
