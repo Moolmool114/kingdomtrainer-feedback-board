@@ -1,0 +1,1 @@
+{"name":"kingdomtrainer-public-feedback","private":true,"type":"module","scripts":{"build":"node scripts/sync-public.mjs","test":"node --test tests/*.test.mjs"}}

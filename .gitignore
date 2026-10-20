@@ -1,0 +1,5 @@
+site/
+node_modules/
+outputs/
+*.pem
+.env*

@@ -1,0 +1,12 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {Script} from 'node:vm';
+import {safeItem,collect} from '../scripts/sync-public.mjs';
+const item={id:1,number:'KT-001',title:'钱袋问题',summary:'待核查',kind:'问题',status:'排查中',reply:'',createdAt:'2026-10-20T10:00:00Z',updatedAt:'2026-10-20T10:00:00Z',reportCount:1};
+const page=(items,nextCursor=null,total=items.length)=>new Response(JSON.stringify({items,nextCursor,stats:{total},updatedAt:'2026-10-20T10:00:00Z'}));
+test('exported records have a strict field allowlist',()=>{assert.deepEqual(safeItem({...item,email:'PRIVATE',logs:'PRIVATE',attachment:'PRIVATE',submission_id:'PRIVATE'}),item);});
+test('malformed public fields cannot be published',()=>{for(const bad of [{id:-1},{reply:null},{title:'x'.repeat(101)},{status:'unverified new state'},{updatedAt:'wrong'}])assert.throws(()=>safeItem({...item,...bad}));});
+test('all pages are collected with no private additions',async()=>{let count=0;const v=await collect(async()=>++count===1?page([{...item,id:2,number:'KT-002'}],2,2):page([item],null,2));assert.equal(v.items.length,2);assert.equal(v.stats.progress,2);assert.equal(v.nextCursor,null);});
+test('failed source, duplicates, incomplete or changing lists stop publication',async()=>{await assert.rejects(collect(async()=>new Response('',{status:503})));await assert.rejects(collect(async()=>page([item,item])));await assert.rejects(collect(async()=>page([item],null,4)));let n=0;await assert.rejects(collect(async()=>++n===1?page([item],1,2):page([],null,3)));});
+test('public page is self-contained, uses same-origin data and textContent',()=>{const html=readFileSync('web/index.html','utf8');const scripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];assert.equal(scripts.length,1);new Script(scripts[0][1]);assert.ok(html.includes("api('./issues.json'+"));assert.ok(html.includes('textContent'));assert.ok(!html.includes('innerHTML'));for(const secret of ['ADMIN_EMAIL','TALLY_SIGNING_SECRET','/api/admin','/api/issues'])assert.ok(!html.includes(secret));assert.ok(!/<(?:script|link)[^>]+(?:src|href)=["']https?:/i.test(html));});

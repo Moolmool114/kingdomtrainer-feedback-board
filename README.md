@@ -1,2 +1,13 @@
-# kingdomtrainer-feedback-board
-KingdomTrainer public feedback board; website only, no trainer releases.
+# KingdomTrainer · 玩家反馈与进展
+
+这里仅维护玩家反馈公示网站，与软件发行仓库分开。不会发布修改器二进制、更新检测文件、游戏源码、玩家日志或附件。
+
+提交反馈：https://tally.so/r/XxVDM4
+
+新反馈经后台自动归类为私有草稿；作者确认摘要并填写回复后才公开。此网站约每30分钟同步已公开事项。评分与问题独立处理，五星反馈也可能包含功能问题。
+
+网页与公开数据在同一 GitHub Pages 地址提供；访客不用登录。原始附件继续只保存在 Tally 后台。
+
+自动同步只读取已公开字段；不使用 Tally 私钥、GitHub个人令牌或 AI API。同步失败会终止发布，保留上一次成功页面。
+
+本仓库仅含静态网页、字段校验脚本和标准 GitHub Pages 工作流，不含游戏修改功能。工作流使用标准 Ubuntu runner，产物只保留1天，不开启收费运行器或购买域名。
