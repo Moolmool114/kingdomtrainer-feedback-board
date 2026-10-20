@@ -9,6 +9,6 @@ export async function build(){
  if(!html.includes("api('./issues.json'+")||html.includes('TALLY_SIGNING_SECRET')||html.includes('/api/admin'))throw Error('public_html_contract');
  await mkdir('site',{recursive:true});await copyFile('web/index.html','site/index.html');await copyFile('web/.nojekyll','site/.nojekyll');
  await writeFile('site/issues.json',JSON.stringify(data));await writeFile('site/robots.txt','User-agent: *\nAllow: /\n');
- console.log(JSON.stringify({publicItems:data.items.length,privateFieldsExported:false,origin:ORIGIN}));
+ console.log(JSON.stringify({publicItems:data.items.length,privateFieldsExported:false}));
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)await build();
