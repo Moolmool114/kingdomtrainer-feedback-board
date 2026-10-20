@@ -1,12 +1,14 @@
 import {mkdir,copyFile,writeFile,readFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
 const ORIGIN='https://kingdomtrainer-feedback.classybud9.chatgpt.site';
+export const STATUSES=['待核查','需补充信息','排查中','已确认','修复中','待验证','已修复','待评估','已采纳','计划中','制作中','测试中','已完成','暂缓处理','无法复现','重复反馈','暂不采纳'];
+export const IN_PROGRESS=['排查中','已确认','修复中','待验证','已采纳','计划中','制作中','测试中'];
 const keys=['id','number','title','summary','kind','status','reply','createdAt','updatedAt','reportCount'];
 export function safeItem(v){
  const out={};for(const key of keys)out[key]=v?.[key];
  if(!Number.isSafeInteger(out.id)||out.id<1||out.number!=='KT-'+String(out.id).padStart(3,'0')||!Number.isSafeInteger(out.reportCount)||out.reportCount<0)throw Error('invalid_public_record');
  for(const [key,max,min] of [['title',100,1],['summary',1800,1],['reply',3000,0]])if(typeof out[key]!=='string'||out[key].length>max||out[key].length<min)throw Error('invalid_public_text');
- if(!['问题','建议','体验'].includes(out.kind)||!['待核查','排查中','待评估','计划中','已修复','已完成','暂不采纳'].includes(out.status)||!Number.isFinite(Date.parse(out.createdAt))||!Number.isFinite(Date.parse(out.updatedAt)))throw Error('invalid_public_state');
+ if(!['问题','建议','体验'].includes(out.kind)||!STATUSES.includes(out.status)||!Number.isFinite(Date.parse(out.createdAt))||!Number.isFinite(Date.parse(out.updatedAt)))throw Error('invalid_public_state');
  return out;
 }
 export async function collect(fetcher=fetch){
@@ -23,7 +25,7 @@ export async function collect(fetcher=fetch){
   last=data.updatedAt;
   if(data.nextCursor===null){
    if(items.length!==total)throw Error('incomplete_source');
-   const stats={total:items.length,progress:items.filter(i=>['排查中','计划中'].includes(i.status)).length,done:items.filter(i=>['已修复','已完成'].includes(i.status)).length};
+   const stats={total:items.length,progress:items.filter(i=>IN_PROGRESS.includes(i.status)).length,done:items.filter(i=>['已修复','已完成'].includes(i.status)).length};
    return {items,nextCursor:null,stats,updatedAt:items.length?items.map(i=>i.updatedAt).sort().at(-1):last,syncedAt:new Date().toISOString()};
   }
   if(!Number.isSafeInteger(data.nextCursor)||data.nextCursor<1||(cursor!==null&&data.nextCursor>=cursor))throw Error('invalid_cursor');cursor=data.nextCursor;
