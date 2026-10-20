@@ -2,7 +2,7 @@ name: Public feedback board
 on:
   workflow_dispatch:
   schedule:
-    - cron: '17,47 * * * *'
+    - cron: '3,8,13,18,23,28,33,38,43,48,53,58 * * * *'
   push:
     branches: [main]
     paths: ['web/**', 'scripts/**', 'tests/**', 'package.json', '.github/workflows/feedback-pages.yml']

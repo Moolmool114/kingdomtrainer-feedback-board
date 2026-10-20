@@ -1,1 +1,10 @@
-{"name":"kingdomtrainer-public-feedback","private":true,"type":"module","scripts":{"build":"node scripts/sync-public.mjs","test":"node --test tests/*.test.mjs"}}
+{
+  "name": "kingdomtrainer-public-feedback",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/sync-public.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "build:edge": "node scripts/build-edge.mjs"
+  }
+}

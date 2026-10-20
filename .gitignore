@@ -3,3 +3,4 @@ node_modules/
 outputs/
 *.pem
 .env*
+edge-site/
