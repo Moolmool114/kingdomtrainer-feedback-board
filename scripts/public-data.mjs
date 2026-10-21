@@ -7,6 +7,7 @@ export function safeItem(v){
  if(!Number.isSafeInteger(out.id)||out.id<1||out.number!=='KT-'+String(out.id).padStart(3,'0')||!Number.isSafeInteger(out.reportCount)||out.reportCount<0)throw Error('invalid_public_record');
  for(const [key,max,min] of [['title',100,1],['summary',1800,1],['reply',3000,0]])if(typeof out[key]!=='string'||out[key].length>max||out[key].length<min)throw Error('invalid_public_text');
  if(!['问题','建议','体验'].includes(out.kind)||!STATUSES.includes(out.status)||!Number.isFinite(Date.parse(out.createdAt))||!Number.isFinite(Date.parse(out.updatedAt)))throw Error('invalid_public_state');
+ if(v.references!==undefined){if(!Array.isArray(v.references)||v.references.length>100||typeof v.referencesTruncated!=='boolean')throw Error('invalid_public_references');out.references=v.references.map(r=>{if(typeof r?.reportId!=='string'||!/^FB-\d{8}-\d{6}-[a-f0-9]{8}$/.test(r.reportId)||typeof r.deviceId!=='string'||(r.deviceId&&!/^KTC-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(r.deviceId)))throw Error('invalid_public_references');return {reportId:r.reportId,deviceId:r.deviceId};});out.referencesTruncated=v.referencesTruncated;}
  return out;
 }
 export async function collect(fetcher=fetch){
